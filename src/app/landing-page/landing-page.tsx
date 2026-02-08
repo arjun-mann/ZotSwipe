@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function LandingPage() {
   return (
@@ -15,19 +16,23 @@ export default function LandingPage() {
 
       <div className="flex-1 flex items-center justify-center px-8 pb-16">
         <div className="flex gap-8 flex-col sm:flex-row w-full max-w-7xl">
-          <Button 
-            size="lg" 
-            className="flex-1 text-6xl sm:text-7xl md:text-8xl py-32 sm:py-40 h-auto font-bold hover:scale-[1.02] transition-transform"
-          >
-            Anty
-          </Button>
-          <Button 
-            variant="secondary"
-            size="lg" 
-            className="flex-1 text-6xl sm:text-7xl md:text-8xl py-32 sm:py-40 h-auto font-bold hover:scale-[1.02] transition-transform"
-          >
-            Brandy
-          </Button>
+          <Link href="/waiting?location=Anteatery" className="flex-1">
+            <Button 
+              size="lg" 
+              className="w-full flex-1 text-6xl sm:text-7xl md:text-8xl py-32 sm:py-40 h-auto font-bold hover:scale-[1.02] transition-transform"
+            >
+              Anty
+            </Button>
+          </Link>
+          <Link href="/waiting?location=Brandywine" className="flex-1">
+            <Button 
+              variant="secondary"
+              size="lg" 
+              className="w-full flex-1 text-6xl sm:text-7xl md:text-8xl py-32 sm:py-40 h-auto font-bold hover:scale-[1.02] transition-transform"
+            >
+              Brandy
+            </Button>
+          </Link>
         </div>
       </div>
     </main>
