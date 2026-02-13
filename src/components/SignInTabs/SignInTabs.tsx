@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { auth } from "@/lib/firebase";
 import {
@@ -20,7 +19,6 @@ import { Separator } from "@/components/ui/separator";
 type AuthType = "Sign In" | "Sign Up";
 
 function SignInCard({ authType }: { authType: AuthType }) {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -32,7 +30,6 @@ function SignInCard({ authType }: { authType: AuthType }) {
           ? signInWithEmailAndPassword
           : createUserWithEmailAndPassword;
       await authFunc(auth, email, password);
-      router.push("/provider-profile");
       setError("");
     } catch (error) {
       console.error(`Error trying to ${authType.toLowerCase()}:`, error);
@@ -46,7 +43,6 @@ function SignInCard({ authType }: { authType: AuthType }) {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      router.push("/provider-profile");
       setError("");
     } catch (error) {
       console.error(

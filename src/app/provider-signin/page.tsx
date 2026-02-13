@@ -1,10 +1,43 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SignInTabs from "@/components/SignInTabs/SignInTabs";
+import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/AuthProvider/AuthProvider";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 export default function ProviderSignIn() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const { profile, loading: profileLoading } = useUserProfile();
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    // Auth is loaded, check if user is signed in
+    if (user) {
+      // Wait for profile to load before redirecting
+      if (profileLoading) return;
+
+      if (profile?.name) {
+        router.push("/provider-dashboard");
+      } else {
+        router.push("/provider-setup");
+      }
+    }
+  }, [user, profile, authLoading, profileLoading, router]);
+
+  if (authLoading) {
+    return <LoadingPage />;
+  }
+
+  if (user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background relative flex flex-col">
       <div className="absolute top-6 right-6 z-10">
