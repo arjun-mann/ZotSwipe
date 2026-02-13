@@ -1,35 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
 import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import SignOutButton from "@/components/SignOutButton/SignOutButton";
-import { useAuth } from "@/components/AuthProvider/AuthProvider";
-import { useUserProfile } from "@/hooks/useUserProfile";
+import { useProviderRedirect } from "@/hooks/useProviderRedirect";
 
 export default function ProviderDashboard() {
-  const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading } = useUserProfile();
-
-  useEffect(() => {
-    if (authLoading) return;
-
-    // Auth is loaded, check if user is signed in
-    if (!user) {
-      router.push("/provider-signin");
-      return;
-    }
-
-    // Wait for profile to load
-    if (profileLoading) return;
-
-    // Redirect if hasn't completed setup
-    if (!profile?.name) {
-      router.push("/provider-setup");
-    }
-  }, [user, profile, authLoading, profileLoading, router]);
+  const { user, profile, authLoading, profileLoading } =
+    useProviderRedirect("dashboard");
 
   if (authLoading || profileLoading) {
     return <LoadingPage />;

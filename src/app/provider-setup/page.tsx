@@ -1,51 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import SignOutButton from "@/components/SignOutButton/SignOutButton";
-import { useAuth } from "@/components/AuthProvider/AuthProvider";
-import { useUserProfile } from "@/hooks/useUserProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useProviderRedirect } from "@/hooks/useProviderRedirect";
 
 export default function ProviderSetup() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading } = useUserProfile();
+  const { user, authLoading, profileLoading } = useProviderRedirect("setup");
   const [name, setName] = useState("");
-
-  useEffect(() => {
-    if (authLoading) return;
-
-    // Auth is loaded, check if user is signed in
-    if (!user) {
-      router.push("/provider-signin");
-      return;
-    }
-
-    // Wait for profile to load
-    if (profileLoading) return;
-
-    // Redirect if already has profile
-    if (profile?.name) {
-      router.push("/provider-dashboard");
-    }
-  }, [user, profile, authLoading, profileLoading, router]);
 
   const handleSave = async () => {
     if (!user || !name) return;
-
     await updateDoc(doc(db, "users", user.uid), { name });
-
     router.push("/provider-dashboard");
   };
 
   if (authLoading || profileLoading) {
-    console.log("provider-setup: Auth or profile loading...");
     return <LoadingPage />;
   }
 
