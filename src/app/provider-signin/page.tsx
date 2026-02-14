@@ -2,9 +2,21 @@
 
 import Link from "next/link";
 import SignInTabs from "@/components/SignInTabs/SignInTabs";
+import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import { Button } from "@/components/ui/button";
+import { useProviderRedirect } from "@/hooks/useProviderRedirect";
 
 export default function ProviderSignIn() {
+  const { user, authLoading } = useProviderRedirect("signin");
+
+  if (authLoading) {
+    return <LoadingPage />;
+  }
+
+  if (user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background relative flex flex-col">
       <div className="absolute top-6 right-6 z-10">
