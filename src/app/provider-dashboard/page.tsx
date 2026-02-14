@@ -7,16 +7,38 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useProviderRedirect } from "@/hooks/useProviderRedirect";
 
+interface Buyer {
+  id: string;
+  name: string;
+  location: "Anteatery" | "Brandywine";
+  requestedMinsAgo: number;
+}
+
 export default function ProviderDashboard() {
   const { user, profile, authLoading, profileLoading } =
     useProviderRedirect("dashboard");
   const router = useRouter();
 
   // TODO: replace with real data from backend/database
-  const buyers = [
-    { id: "buyer-1", name: "Abhi S", requested: "1 min ago" },
-    { id: "buyer-2", name: "Jordan R", requested: "5 min ago" },
-    { id: "buyer-3", name: "Priya K", requested: "8 min ago" },
+  const buyers: Buyer[] = [
+    {
+      id: "buyer-1",
+      name: "Abhi S",
+      location: "Brandywine",
+      requestedMinsAgo: 1,
+    },
+    {
+      id: "buyer-2",
+      name: "Jordan R",
+      location: "Anteatery",
+      requestedMinsAgo: 5,
+    },
+    {
+      id: "buyer-3",
+      name: "Priya K",
+      location: "Brandywine",
+      requestedMinsAgo: 8,
+    },
   ];
 
   // TODO: is this the correct page to redirect to?
@@ -55,7 +77,11 @@ export default function ProviderDashboard() {
                   <div>
                     <div className="text-lg font-semibold">{buyer.name}</div>
                     <div className="text-sm text-muted-foreground">
-                      Requested {buyer.requested}
+                      Location: {buyer.location}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Requested: {buyer.requestedMinsAgo} min
+                      {buyer.requestedMinsAgo === 1 ? "" : "s"} ago
                     </div>
                   </div>
                 </div>
