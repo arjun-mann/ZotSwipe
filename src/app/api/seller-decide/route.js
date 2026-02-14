@@ -4,7 +4,7 @@ export async function POST(req) {
     try {
         const body = await req.json();
         const { sellerId, decision } = body;
-        if (!sellerId || !decision || (decision !== 'yes' || decision !== 'no')) {
+        if (!sellerId || !decision || (decision !== 'yes' && decision !== 'no')) {
             return Response.json({ ok: false, message: "invalid sellerId and decision" }, { status: 400 });
         }
         const guest = sellerCurrent.get(sellerId);
