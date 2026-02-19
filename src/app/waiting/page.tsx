@@ -1,15 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  doc,
+  deleteDoc,
+  onSnapshot,
+} from "firebase/firestore";
 
 export default function WaitingPage() {
   const [dots, setDots] = useState(1);
   const [matchFound, setMatchFound] = useState(false);
   const searchParams = useSearchParams();
   const location = searchParams.get("location") || "unknown";
+  const requestDocId = useRef<string | null>(null);
 
   {/* Made interval 500 but feel free to adjust */}
   useEffect(() => {
@@ -20,14 +30,53 @@ export default function WaitingPage() {
     return () => clearInterval(interval);
   }, []);
 
-  {/* Use effect cuz I only know this hook */}
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setMatchFound(true);
-    }, 10000);
 
-    return () => clearTimeout(timer);
-  }, []);
+  useEffect(() => {
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+
+    const createRequest = async () => {
+      // Apparently React strict mode causes it to run twice
+      if (requestDocId.current) return;
+
+      try {
+        const docRef = await addDoc(collection(db, "buyerRequests"), {
+          location,
+          status: "waiting",
+          createdAt: serverTimestamp(),
+        });
+
+        if (cancelled) {
+          deleteDoc(doc(db, "buyerRequests", docRef.id)).catch(console.error);
+          return;
+        }
+
+        requestDocId.current = docRef.id;
+
+        unsubscribe = onSnapshot(doc(db, "buyerRequests", docRef.id), (snap) => {
+          const data = snap.data();
+          if (data?.status === "matched") {
+            setMatchFound(true);
+          }
+        });
+      } catch (err) {
+        console.error("Failed to create buyer request:", err);
+      }
+    };
+
+    createRequest();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+      if (requestDocId.current) {
+        deleteDoc(doc(db, "buyerRequests", requestDocId.current)).catch(
+          console.error
+        );
+        requestDocId.current = null;
+      }
+    };
+  }, [location]);
 
   return (
     <main className="min-h-screen bg-background relative flex flex-col">
