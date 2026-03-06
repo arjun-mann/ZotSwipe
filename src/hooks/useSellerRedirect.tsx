@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider/AuthProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
-type SellerRedirectMode = "signin" | "setup" | "dashboard";
+type SellerRedirectMode = "signin" | "setup" | "protectedPage";
 
 export function useSellerRedirect(mode: SellerRedirectMode) {
   const router = useRouter();
@@ -40,7 +40,7 @@ export function useSellerRedirect(mode: SellerRedirectMode) {
       return;
     }
 
-    if (mode === "dashboard" && !profile?.name) {
+    if (mode === "protectedPage" && !profile?.name) {
       router.push("/seller-setup");
     }
   }, [mode, user, profile, authLoading, profileLoading, router]);

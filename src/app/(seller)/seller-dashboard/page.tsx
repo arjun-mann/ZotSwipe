@@ -27,7 +27,7 @@ interface Buyer {
 
 export default function SellerDashboard() {
   const { user, profile, authLoading, profileLoading } =
-    useSellerRedirect("dashboard");
+    useSellerRedirect("protectedPage");
   const router = useRouter();
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
