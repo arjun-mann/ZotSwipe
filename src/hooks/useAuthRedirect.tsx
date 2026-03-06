@@ -21,30 +21,33 @@ export function useAuthRedirect(
     if (authLoading) return;
 
     if (redirectMode === "signin") {
-      if (!user || profileLoading) return;
+      if (!user) return;
 
-      if (profile?.name) {
-        router.push(`/${userType}-dashboard`);
-      } else {
-        router.push(`/${userType}-setup`);
-      }
+      router.push("/");
 
       return;
     }
 
     if (!user) {
-      router.push("/signin");
+      router.push("/signin-page");
       return;
     }
 
     if (profileLoading) return;
 
-    if (redirectMode === "setup" && profile?.name) {
+    const setupComplete =
+      userType === "buyer"
+        ? Boolean(profile?.buyerSetupComplete ?? profile?.name)
+        : userType === "seller"
+          ? Boolean(profile?.sellerSetupComplete ?? profile?.name)
+          : false;
+
+    if (redirectMode === "setup" && setupComplete) {
       router.push(`/${userType}-dashboard`);
       return;
     }
 
-    if (redirectMode === "protectedPage" && !profile?.name) {
+    if (redirectMode === "protectedPage" && !setupComplete) {
       router.push(`/${userType}-setup`);
     }
   }, [

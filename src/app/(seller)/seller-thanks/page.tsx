@@ -2,35 +2,27 @@
 
 import Link from "next/link";
 
-import LoadingPage from "@/components/LoadingPage/LoadingPage";
+import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
+import SignOutButton from "@/components/SignOutButton/SignOutButton";
 import { Button } from "@/components/ui/button";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 export default function Page() {
-  const { user, authLoading, profileLoading } = useAuthRedirect(
-    "seller",
-    "protectedPage",
-  );
-
-  if (authLoading || profileLoading) {
-    return <LoadingPage />;
-  }
-
-  if (!user) {
-    return null;
-  }
-
   return (
-    <main className="min-h-screen bg-background relative flex flex-col justify-center">
-      <div className="text-center space-y-6">
-        <h1 className="text-5xl font-bold text-foreground">
-          Your guest is outside!
-        </h1>
-        <p className="text-2xl text-muted-foreground">Thank you!</p>
-        <Link href="/">
-          <Button size="lg">Return to home</Button>
-        </Link>
-      </div>
-    </main>
+    <ProtectedRoute role="seller" setupAccess="requires-complete">
+      <main className="min-h-screen bg-background relative flex flex-col justify-center">
+        <div className="text-center space-y-6">
+          <h1 className="text-5xl font-bold text-foreground">
+            Your guest is outside!
+          </h1>
+          <p className="text-2xl text-muted-foreground">Thank you!</p>
+          <div className="flex items-center justify-center gap-3">
+            <Link href="/">
+              <Button size="lg">Return to home</Button>
+            </Link>
+            <SignOutButton />
+          </div>
+        </div>
+      </main>
+    </ProtectedRoute>
   );
 }

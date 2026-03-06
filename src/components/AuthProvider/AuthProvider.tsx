@@ -30,6 +30,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: user.email,
             name: null,
             createdAt: new Date(),
+            buyerSetupComplete: false,
+            sellerSetupComplete: false,
+            buyerPricePreference: null,
+            buyerPaymentType: null,
           });
         }
       }

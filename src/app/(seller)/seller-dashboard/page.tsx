@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import SignOutButton from "@/components/SignOutButton/SignOutButton";
+import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { useAuth } from "@/components/AuthProvider/AuthProvider";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -26,10 +29,8 @@ interface Buyer {
 }
 
 export default function SellerDashboard() {
-  const { user, profile, authLoading, profileLoading } = useAuthRedirect(
-    "seller",
-    "protectedPage",
-  );
+  const { user, loading: authLoading } = useAuth();
+  const { profile, loading: profileLoading } = useUserProfile();
   const router = useRouter();
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
@@ -88,55 +89,63 @@ export default function SellerDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-6 py-10">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-bold">Seller Dashboard</h1>
-          <p className="text-lg text-muted-foreground">
-            Welcome back, {profile.name}. Select a buyer to continue.
-          </p>
-        </div>
-
-        <section className="flex flex-col gap-4">
-          <h2 className="text-2xl font-semibold">Potential buyers</h2>
-          {buyers.length === 0 && (
-            <p className="text-muted-foreground">
-              No buyers waiting right now.
+    <ProtectedRoute role="seller" setupAccess="requires-complete">
+      <main className="min-h-screen bg-background px-6 py-10">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-4xl font-bold">Seller Dashboard</h1>
+            <p className="text-lg text-muted-foreground">
+              Welcome back, {profile.name}. Select a buyer to continue.
             </p>
-          )}
-          <div className="flex flex-col gap-3">
-            {buyers.map((buyer) => (
-              <Card
-                key={buyer.id}
-                className="flex flex-col gap-3 border-border p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-muted" />
-                  <div>
-                    <div className="text-lg font-semibold">Guest Buyer</div>
-                    <div className="text-sm text-muted-foreground">
-                      Location: {buyer.location}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Requested: {minsAgo(buyer.createdAt)}
+          </div>
+
+          <section className="flex flex-col gap-4">
+            <h2 className="text-2xl font-semibold">Potential buyers</h2>
+            {buyers.length === 0 && (
+              <p className="text-muted-foreground">
+                No buyers waiting right now.
+              </p>
+            )}
+            <div className="flex flex-col gap-3">
+              {buyers.map((buyer) => (
+                <Card
+                  key={buyer.id}
+                  className="flex flex-col gap-3 border-border p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-muted" />
+                    <div>
+                      <div className="text-lg font-semibold">Guest Buyer</div>
+                      <div className="text-sm text-muted-foreground">
+                        Location: {buyer.location}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Requested: {minsAgo(buyer.createdAt)}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <Button
-                  className="sm:self-center"
-                  onClick={() => chooseBuyer(buyer.id)}
-                >
-                  Choose buyer
-                </Button>
-              </Card>
-            ))}
-          </div>
-        </section>
+                  <Button
+                    className="sm:self-center"
+                    onClick={() => chooseBuyer(buyer.id)}
+                  >
+                    Choose buyer
+                  </Button>
+                </Card>
+              ))}
+            </div>
+          </section>
 
-        <div className="flex justify-end">
-          <SignOutButton />
+          <div className="flex justify-end gap-3">
+            <Link href="/seller-setup">
+              <Button variant="outline">Seller settings</Button>
+            </Link>
+            <Link href="/">
+              <Button variant="outline">Back to landing page</Button>
+            </Link>
+            <SignOutButton />
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </ProtectedRoute>
   );
 }
