@@ -23,15 +23,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useProviderRedirect } from "@/hooks/useProviderRedirect";
+import { useSellerRedirect } from "@/hooks/useSellerRedirect";
 
 type LocationPreference = "Anteatery" | "Brandywine" | "Either";
 type PaymentType = "Zelle" | "Venmo" | "Cash";
 
-export default function ProviderSetup() {
+export default function SellerSetup() {
   const router = useRouter();
-  const { user, authLoading, profileLoading } = useProviderRedirect("setup");
-
+  const { user, authLoading, profileLoading } = useSellerRedirect("setup");
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState("");
   const [locationPreference, setLocationPreference] =
@@ -45,7 +44,13 @@ export default function ProviderSetup() {
       return;
     }
 
-    if (!user || !locationPreference || !pricePreference || Number(pricePreference) < 0 || !paymentType)
+    if (
+      !user ||
+      !locationPreference ||
+      !pricePreference ||
+      Number(pricePreference) < 0 ||
+      !paymentType
+    )
       return;
 
     await updateDoc(doc(db, "users", user.uid), {
@@ -55,7 +60,7 @@ export default function ProviderSetup() {
       paymentType,
     });
 
-    router.push("/provider-dashboard");
+    router.push("/seller-dashboard");
   };
 
   if (authLoading || profileLoading) {

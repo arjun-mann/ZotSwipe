@@ -9,7 +9,7 @@ export default function Page() {
                 <h1 className = "text-5xl font-bold text-foreground">Verify outside entrance</h1>
                 <p className = "text-2xl text-muted-foreground">Describe your outfit!</p>
                 <Input placeholder="Type here..." className="w-64 mx-auto text-center"></Input>
-                <Link href="/guest-thanks">
+                <Link href="/buyer-thanks">
                     <Button size="lg">
                         Verify!
                     </Button>
