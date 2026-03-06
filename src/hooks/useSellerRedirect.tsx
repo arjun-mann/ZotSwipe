@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider/AuthProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
-type ProviderRedirectMode = "signin" | "setup" | "dashboard";
+type SellerRedirectMode = "signin" | "setup" | "dashboard";
 
-export function useProviderRedirect(mode: ProviderRedirectMode) {
+export function useSellerRedirect(mode: SellerRedirectMode) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
@@ -20,28 +20,28 @@ export function useProviderRedirect(mode: ProviderRedirectMode) {
       if (!user || profileLoading) return;
 
       if (profile?.name) {
-        router.push("/provider-dashboard");
+        router.push("/seller-dashboard");
       } else {
-        router.push("/provider-setup");
+        router.push("/seller-setup");
       }
 
       return;
     }
 
     if (!user) {
-      router.push("/provider-signin");
+      router.push("/seller-signin");
       return;
     }
 
     if (profileLoading) return;
 
     if (mode === "setup" && profile?.name) {
-      router.push("/provider-dashboard");
+      router.push("/seller-dashboard");
       return;
     }
 
     if (mode === "dashboard" && !profile?.name) {
-      router.push("/provider-setup");
+      router.push("/seller-setup");
     }
   }, [mode, user, profile, authLoading, profileLoading, router]);
 

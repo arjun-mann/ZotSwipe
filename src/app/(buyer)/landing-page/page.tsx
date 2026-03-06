@@ -5,9 +5,9 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen bg-background relative flex flex-col">
       <div className="absolute top-6 right-6 z-10">
-        <Link href="/provider-signin" className="flex-1">
+        <Link href="/seller-signin" className="flex-1">
           <Button variant="outline" size="lg">
-            I&apos;m a Provider
+            I&apos;m a Seller
           </Button>
         </Link>
       </div>
@@ -20,7 +20,7 @@ export default function LandingPage() {
 
       <div className="flex-1 flex items-center justify-center px-8 pb-16">
         <div className="flex gap-8 flex-col sm:flex-row w-full max-w-7xl">
-          <Link href="/waiting?location=Anteatery" className="flex-1">
+          <Link href="/buyer-waiting?location=Anteatery" className="flex-1">
             <Button
               size="lg"
               className="w-full flex-1 text-6xl sm:text-7xl md:text-8xl py-32 sm:py-40 h-auto font-bold hover:scale-[1.02] transition-transform"
@@ -28,7 +28,7 @@ export default function LandingPage() {
               Anty
             </Button>
           </Link>
-          <Link href="/waiting?location=Brandywine" className="flex-1">
+          <Link href="/buyer-waiting?location=Brandywine" className="flex-1">
             <Button
               variant="secondary"
               size="lg"

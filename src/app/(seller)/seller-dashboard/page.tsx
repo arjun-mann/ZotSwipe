@@ -6,7 +6,7 @@ import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import SignOutButton from "@/components/SignOutButton/SignOutButton";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useProviderRedirect } from "@/hooks/useProviderRedirect";
+import { useSellerRedirect } from "@/hooks/useSellerRedirect";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -25,11 +25,12 @@ interface Buyer {
   createdAt: Timestamp | null;
 }
 
-export default function ProviderDashboard() {
+export default function SellerDashboard() {
   const { user, profile, authLoading, profileLoading } =
-    useProviderRedirect("dashboard");
+    useSellerRedirect("dashboard");
   const router = useRouter();
   const [buyers, setBuyers] = useState<Buyer[]>([]);
+  const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
 
   useEffect(() => {
     const q = query(
@@ -50,6 +51,14 @@ export default function ProviderDashboard() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const chooseBuyer = async (buyerId: string) => {
     try {
       await updateDoc(doc(db, "buyerRequests", buyerId), {
@@ -63,7 +72,7 @@ export default function ProviderDashboard() {
 
   const minsAgo = (ts: Timestamp | null): string => {
     if (!ts) return "just now";
-    const diff = Math.floor((Date.now() - ts.toMillis()) / 60000);
+    const diff = Math.floor((currentTime - ts.toMillis()) / 60000);
     if (diff < 1) return "just now";
     return `${diff} min${diff === 1 ? "" : "s"} ago`;
   };

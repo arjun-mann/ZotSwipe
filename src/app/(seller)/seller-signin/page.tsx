@@ -4,10 +4,10 @@ import Link from "next/link";
 import SignInTabs from "@/components/SignInTabs/SignInTabs";
 import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import { Button } from "@/components/ui/button";
-import { useProviderRedirect } from "@/hooks/useProviderRedirect";
+import { useSellerRedirect } from "@/hooks/useSellerRedirect";
 
-export default function ProviderSignIn() {
-  const { user, authLoading } = useProviderRedirect("signin");
+export default function SellerSignIn() {
+  const { user, authLoading } = useSellerRedirect("signin");
 
   if (authLoading) {
     return <LoadingPage />;
@@ -34,7 +34,7 @@ export default function ProviderSignIn() {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8 pb-16">
-        <h2 className="text-3xl font-bold">Create Provider Profile</h2>
+        <h2 className="text-3xl font-bold">Create Seller Profile</h2>
         <SignInTabs />
       </div>
     </div>
