@@ -6,9 +6,13 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider/AuthProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
-type SellerRedirectMode = "signin" | "setup" | "protectedPage";
+type UserType = "buyer" | "seller";
+type RedirectMode = "signin" | "setup" | "protectedPage";
 
-export function useSellerRedirect(mode: SellerRedirectMode) {
+export function useAuthRedirect(
+  userType: UserType,
+  redirectMode: RedirectMode,
+) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
@@ -16,34 +20,42 @@ export function useSellerRedirect(mode: SellerRedirectMode) {
   useEffect(() => {
     if (authLoading) return;
 
-    if (mode === "signin") {
+    if (redirectMode === "signin") {
       if (!user || profileLoading) return;
 
       if (profile?.name) {
-        router.push("/seller-dashboard");
+        router.push(`/${userType}-dashboard`);
       } else {
-        router.push("/seller-setup");
+        router.push(`/${userType}-setup`);
       }
 
       return;
     }
 
     if (!user) {
-      router.push("/seller-signin");
+      router.push(`/${userType}-signin`);
       return;
     }
 
     if (profileLoading) return;
 
-    if (mode === "setup" && profile?.name) {
-      router.push("/seller-dashboard");
+    if (redirectMode === "setup" && profile?.name) {
+      router.push(`/${userType}-dashboard`);
       return;
     }
 
-    if (mode === "protectedPage" && !profile?.name) {
-      router.push("/seller-setup");
+    if (redirectMode === "protectedPage" && !profile?.name) {
+      router.push(`/${userType}-setup`);
     }
-  }, [mode, user, profile, authLoading, profileLoading, router]);
+  }, [
+    userType,
+    redirectMode,
+    user,
+    profile,
+    authLoading,
+    profileLoading,
+    router,
+  ]);
 
   return { user, profile, authLoading, profileLoading };
 }

@@ -9,11 +9,14 @@ import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import SignOutButton from "@/components/SignOutButton/SignOutButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useSellerRedirect } from "@/hooks/useSellerRedirect";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 export default function SellerSetup() {
   const router = useRouter();
-  const { user, authLoading, profileLoading } = useSellerRedirect("setup");
+  const { user, authLoading, profileLoading } = useAuthRedirect(
+    "seller",
+    "setup",
+  );
   const [name, setName] = useState("");
 
   const handleSave = async () => {

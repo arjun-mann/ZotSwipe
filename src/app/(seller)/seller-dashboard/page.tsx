@@ -6,7 +6,7 @@ import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import SignOutButton from "@/components/SignOutButton/SignOutButton";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useSellerRedirect } from "@/hooks/useSellerRedirect";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -26,8 +26,10 @@ interface Buyer {
 }
 
 export default function SellerDashboard() {
-  const { user, profile, authLoading, profileLoading } =
-    useSellerRedirect("protectedPage");
+  const { user, profile, authLoading, profileLoading } = useAuthRedirect(
+    "seller",
+    "protectedPage",
+  );
   const router = useRouter();
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
@@ -36,7 +38,7 @@ export default function SellerDashboard() {
     const q = query(
       collection(db, "buyerRequests"),
       where("status", "==", "waiting"),
-      orderBy("createdAt", "asc")
+      orderBy("createdAt", "asc"),
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -98,7 +100,9 @@ export default function SellerDashboard() {
         <section className="flex flex-col gap-4">
           <h2 className="text-2xl font-semibold">Potential buyers</h2>
           {buyers.length === 0 && (
-            <p className="text-muted-foreground">No buyers waiting right now.</p>
+            <p className="text-muted-foreground">
+              No buyers waiting right now.
+            </p>
           )}
           <div className="flex flex-col gap-3">
             {buyers.map((buyer) => (
@@ -118,7 +122,10 @@ export default function SellerDashboard() {
                     </div>
                   </div>
                 </div>
-                <Button className="sm:self-center" onClick={() => chooseBuyer(buyer.id)}>
+                <Button
+                  className="sm:self-center"
+                  onClick={() => chooseBuyer(buyer.id)}
+                >
                   Choose buyer
                 </Button>
               </Card>

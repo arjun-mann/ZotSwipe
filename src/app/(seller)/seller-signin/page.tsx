@@ -4,10 +4,10 @@ import Link from "next/link";
 import SignInTabs from "@/components/SignInTabs/SignInTabs";
 import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import { Button } from "@/components/ui/button";
-import { useSellerRedirect } from "@/hooks/useSellerRedirect";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 export default function SellerSignIn() {
-  const { user, authLoading } = useSellerRedirect("signin");
+  const { user, authLoading } = useAuthRedirect("seller", "signin");
 
   if (authLoading) {
     return <LoadingPage />;

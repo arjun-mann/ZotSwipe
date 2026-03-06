@@ -4,10 +4,13 @@ import Link from "next/link";
 
 import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import { Button } from "@/components/ui/button";
-import { useSellerRedirect } from "@/hooks/useSellerRedirect";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 export default function Page() {
-  const { user, authLoading, profileLoading } = useSellerRedirect("protectedPage");
+  const { user, authLoading, profileLoading } = useAuthRedirect(
+    "seller",
+    "protectedPage",
+  );
 
   if (authLoading || profileLoading) {
     return <LoadingPage />;
