@@ -1,49 +1,71 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import SignOutButton from "@/components/SignOutButton/SignOutButton";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useProviderRedirect } from "@/hooks/useProviderRedirect";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  doc,
+  updateDoc,
+  Timestamp,
+} from "firebase/firestore";
 
 interface Buyer {
   id: string;
-  name: string;
   location: "Anteatery" | "Brandywine";
-  requestedMinsAgo: number;
+  createdAt: Timestamp | null;
 }
 
 export default function ProviderDashboard() {
   const { user, profile, authLoading, profileLoading } =
     useProviderRedirect("dashboard");
   const router = useRouter();
+  const [buyers, setBuyers] = useState<Buyer[]>([]);
 
-  // TODO: replace with real data from backend/database
-  const buyers: Buyer[] = [
-    {
-      id: "buyer-1",
-      name: "Abhi S",
-      location: "Brandywine",
-      requestedMinsAgo: 1,
-    },
-    {
-      id: "buyer-2",
-      name: "Jordan R",
-      location: "Anteatery",
-      requestedMinsAgo: 5,
-    },
-    {
-      id: "buyer-3",
-      name: "Priya K",
-      location: "Brandywine",
-      requestedMinsAgo: 8,
-    },
-  ];
+  useEffect(() => {
+    const q = query(
+      collection(db, "buyerRequests"),
+      where("status", "==", "waiting"),
+      orderBy("createdAt", "asc")
+    );
 
-  // TODO: is this the correct page to redirect to?
-  const chooseBuyer = () => {
-    router.push("/buyer-otw");
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const updatedBuyers: Buyer[] = snapshot.docs.map((d) => ({
+        id: d.id,
+        location: d.data().location,
+        createdAt: d.data().createdAt ?? null,
+      }));
+      setBuyers(updatedBuyers);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const chooseBuyer = async (buyerId: string) => {
+    try {
+      await updateDoc(doc(db, "buyerRequests", buyerId), {
+        status: "matched",
+      });
+      router.push("/buyer-otw");
+    } catch (err) {
+      console.error("Failed to match buyer:", err);
+    }
+  };
+
+  const minsAgo = (ts: Timestamp | null): string => {
+    if (!ts) return "just now";
+    const diff = Math.floor((Date.now() - ts.toMillis()) / 60000);
+    if (diff < 1) return "just now";
+    return `${diff} min${diff === 1 ? "" : "s"} ago`;
   };
 
   if (authLoading || profileLoading) {
@@ -66,6 +88,9 @@ export default function ProviderDashboard() {
 
         <section className="flex flex-col gap-4">
           <h2 className="text-2xl font-semibold">Potential buyers</h2>
+          {buyers.length === 0 && (
+            <p className="text-muted-foreground">No buyers waiting right now.</p>
+          )}
           <div className="flex flex-col gap-3">
             {buyers.map((buyer) => (
               <Card
@@ -75,17 +100,16 @@ export default function ProviderDashboard() {
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-muted" />
                   <div>
-                    <div className="text-lg font-semibold">{buyer.name}</div>
+                    <div className="text-lg font-semibold">Guest Buyer</div>
                     <div className="text-sm text-muted-foreground">
                       Location: {buyer.location}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Requested: {buyer.requestedMinsAgo} min
-                      {buyer.requestedMinsAgo === 1 ? "" : "s"} ago
+                      Requested: {minsAgo(buyer.createdAt)}
                     </div>
                   </div>
                 </div>
-                <Button className="sm:self-center" onClick={chooseBuyer}>
+                <Button className="sm:self-center" onClick={() => chooseBuyer(buyer.id)}>
                   Choose buyer
                 </Button>
               </Card>
