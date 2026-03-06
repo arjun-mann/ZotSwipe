@@ -36,7 +36,7 @@ export default function ProviderSetup() {
   const [nameError, setNameError] = useState("");
   const [locationPreference, setLocationPreference] =
     useState<LocationPreference>("Either");
-  const [pricePreference, setPricePreference] = useState(0);
+  const [pricePreference, setPricePreference] = useState("");
   const [paymentType, setPaymentType] = useState<PaymentType>("Zelle");
 
   const handleSave = async () => {
@@ -45,13 +45,13 @@ export default function ProviderSetup() {
       return;
     }
 
-    if (!user || !locationPreference || pricePreference < 0 || !paymentType)
+    if (!user || !locationPreference || !pricePreference || Number(pricePreference) < 0 || !paymentType)
       return;
 
     await updateDoc(doc(db, "users", user.uid), {
       name,
       locationPreference,
-      pricePreference,
+      pricePreference: Number(pricePreference),
       paymentType,
     });
 
@@ -122,7 +122,7 @@ export default function ProviderSetup() {
               min="0"
               placeholder="Enter price"
               value={pricePreference}
-              onChange={(e) => setPricePreference(Number(e.target.value))}
+              onChange={(e) => setPricePreference(e.target.value)}
               required
             />
           </div>
