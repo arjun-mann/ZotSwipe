@@ -1,7 +1,26 @@
+"use client";
+
+import LoadingPage from "@/components/LoadingPage/LoadingPage";
+import SignInPage from "@/app/signin-page/page";
+
 import { Button } from "@/components/ui/button";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import Link from "next/link";
 
 export default function LandingPage() {
+  const { user, authLoading, profileLoading } = useAuthRedirect(
+    "buyer",
+    "protectedPage",
+  );
+
+  if (authLoading || profileLoading) {
+    return <LoadingPage />;
+  }
+
+  if (!user) {
+    return <SignInPage />;
+  }
+
   return (
     <main className="min-h-screen bg-background relative flex flex-col">
       <div className="absolute top-6 right-6 z-10">
@@ -25,7 +44,7 @@ export default function LandingPage() {
               size="lg"
               className="w-full flex-1 text-6xl sm:text-7xl md:text-8xl py-32 sm:py-40 h-auto font-bold hover:scale-[1.02] transition-transform"
             >
-              Anty
+              Anteatery
             </Button>
           </Link>
           <Link href="/buyer-waiting?location=Brandywine" className="flex-1">
@@ -34,7 +53,7 @@ export default function LandingPage() {
               size="lg"
               className="w-full flex-1 text-6xl sm:text-7xl md:text-8xl py-32 sm:py-40 h-auto font-bold hover:scale-[1.02] transition-transform"
             >
-              Brandy
+              Brandywine
             </Button>
           </Link>
         </div>

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider/AuthProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
-type UserType = "buyer" | "seller";
+type UserType = "buyer" | "seller" | "neither";
 type RedirectMode = "signin" | "setup" | "protectedPage";
 
 export function useAuthRedirect(
@@ -33,7 +33,7 @@ export function useAuthRedirect(
     }
 
     if (!user) {
-      router.push(`/${userType}-signin`);
+      router.push("/signin");
       return;
     }
 
