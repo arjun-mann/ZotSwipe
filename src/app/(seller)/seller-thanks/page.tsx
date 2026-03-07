@@ -1,10 +1,7 @@
 "use client";
 
-import Link from "next/link";
-
 import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 import NavigationBar from "@/components/NavigationBar/NavigationBar";
-import { Button } from "@/components/ui/button";
 
 export default function Page() {
   return (

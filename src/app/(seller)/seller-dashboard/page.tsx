@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from "@/components/AuthProvider/AuthProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { db } from "@/lib/firebase";
+import { getTimeAgo } from "@/lib/helpers";
 import {
   collection,
   query,
@@ -32,7 +33,6 @@ export default function SellerDashboard() {
   const { profile, loading: profileLoading } = useUserProfile();
   const router = useRouter();
   const [buyers, setBuyers] = useState<Buyer[]>([]);
-  const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
 
   useEffect(() => {
     const q = query(
@@ -53,14 +53,6 @@ export default function SellerDashboard() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
-
   const chooseBuyer = async (buyerId: string) => {
     try {
       await updateDoc(doc(db, "buyerRequests", buyerId), {
@@ -70,13 +62,6 @@ export default function SellerDashboard() {
     } catch (err) {
       console.error("Failed to match buyer:", err);
     }
-  };
-
-  const minsAgo = (ts: Timestamp | null): string => {
-    if (!ts) return "just now";
-    const diff = Math.floor((currentTime - ts.toMillis()) / 60000);
-    if (diff < 1) return "just now";
-    return `${diff} min${diff === 1 ? "" : "s"} ago`;
   };
 
   if (authLoading || profileLoading) {
@@ -120,7 +105,7 @@ export default function SellerDashboard() {
                         Location: {buyer.location}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        Requested: {minsAgo(buyer.createdAt)}
+                        Requested: {getTimeAgo(buyer.createdAt)}
                       </div>
                     </div>
                   </div>

@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import NavigationBar from "@/components/NavigationBar/NavigationBar";
 import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 import { db } from "@/lib/firebase";

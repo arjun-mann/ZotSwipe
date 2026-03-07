@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/AuthProvider/AuthProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { isSetupComplete } from "@/lib/helpers";
 
 type UserType = "buyer" | "seller" | "neither";
 type RedirectMode = "signin" | "setup" | "protectedPage";
@@ -36,11 +37,7 @@ export function useAuthRedirect(
     if (profileLoading) return;
 
     const setupComplete =
-      userType === "buyer"
-        ? Boolean(profile?.buyerSetupComplete ?? profile?.name)
-        : userType === "seller"
-          ? Boolean(profile?.sellerSetupComplete ?? profile?.name)
-          : false;
+      userType !== "neither" ? isSetupComplete(userType, profile) : false;
 
     if (redirectMode === "setup" && setupComplete) {
       router.push(`/${userType}-dashboard`);

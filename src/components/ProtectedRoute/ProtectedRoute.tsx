@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import { useAuth } from "@/components/AuthProvider/AuthProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { isSetupComplete } from "@/lib/helpers";
 
 type Role = "buyer" | "seller";
 type SetupAccess = "any" | "requires-complete" | "requires-incomplete";
@@ -14,19 +15,6 @@ interface ProtectedRouteProps {
   children: ReactNode;
   role?: Role;
   setupAccess?: SetupAccess;
-}
-
-function getSetupComplete(
-  role: Role,
-  profile: ReturnType<typeof useUserProfile>["profile"],
-) {
-  if (!profile) return false;
-
-  if (role === "buyer") {
-    return Boolean(profile.buyerSetupComplete ?? profile.name);
-  }
-
-  return Boolean(profile.sellerSetupComplete ?? profile.name);
 }
 
 export default function ProtectedRoute({
@@ -50,14 +38,14 @@ export default function ProtectedRoute({
       return;
     }
 
-    const isSetupComplete = getSetupComplete(role, profile);
+    const setupComplete = isSetupComplete(role, profile);
 
-    if (setupAccess === "requires-complete" && !isSetupComplete) {
+    if (setupAccess === "requires-complete" && !setupComplete) {
       router.replace(`/${role}-setup`);
       return;
     }
 
-    if (setupAccess === "requires-incomplete" && isSetupComplete) {
+    if (setupAccess === "requires-incomplete" && setupComplete) {
       router.replace(`/${role}-dashboard`);
     }
   }, [authLoading, profileLoading, user, role, setupAccess, profile, router]);
@@ -74,13 +62,13 @@ export default function ProtectedRoute({
     return <>{children}</>;
   }
 
-  const isSetupComplete = getSetupComplete(role, profile);
+  const setupComplete = isSetupComplete(role, profile);
 
-  if (setupAccess === "requires-complete" && !isSetupComplete) {
+  if (setupAccess === "requires-complete" && !setupComplete) {
     return <LoadingPage />;
   }
 
-  if (setupAccess === "requires-incomplete" && isSetupComplete) {
+  if (setupAccess === "requires-incomplete" && setupComplete) {
     return <LoadingPage />;
   }
 

@@ -7,20 +7,19 @@ import LoadingPage from "@/components/LoadingPage/LoadingPage";
 import NavigationBar from "@/components/NavigationBar/NavigationBar";
 import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { isSetupComplete } from "@/lib/helpers";
 
 export default function LandingPage() {
   const router = useRouter();
   const { profile, loading } = useUserProfile();
 
   const goToBuyerFlow = () => {
-    const setupComplete = Boolean(profile?.buyerSetupComplete ?? profile?.name);
+    const setupComplete = isSetupComplete("buyer", profile);
     router.push(setupComplete ? "/buyer-dashboard" : "/buyer-setup");
   };
 
   const goToSellerFlow = () => {
-    const setupComplete = Boolean(
-      profile?.sellerSetupComplete ?? profile?.name,
-    );
+    const setupComplete = isSetupComplete("seller", profile);
     router.push(setupComplete ? "/seller-dashboard" : "/seller-setup");
   };
 
