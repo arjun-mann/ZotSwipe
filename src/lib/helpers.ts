@@ -1,5 +1,5 @@
 import { Timestamp } from "firebase/firestore";
-import { UserProfile } from "@/hooks/useUserProfile";
+import { UserProfile } from "@/types";
 
 /**
  * Helper function to format time ago from Firebase Timestamp

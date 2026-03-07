@@ -4,19 +4,7 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, DocumentReference } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/components/AuthProvider/AuthProvider";
-
-export interface UserProfile {
-  name: string | null;
-  email: string | null;
-  createdAt: Date;
-  buyerSetupComplete?: boolean;
-  sellerSetupComplete?: boolean;
-  buyerPricePreference?: number | null;
-  buyerPaymentType?: "zelle" | "venmo" | "cash" | null;
-  sellerLocationPreference?: "Anteatery" | "Brandywine" | "Either" | null;
-  sellerPricePreference?: number | null;
-  sellerPaymentType?: "zelle" | "venmo" | "cash" | null;
-}
+import { UserProfile } from "@/types";
 
 export function useUserProfile() {
   const { user } = useAuth();
@@ -24,16 +12,21 @@ export function useUserProfile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
     let cancelled = false;
 
     const fetchProfile = async () => {
+      if (!user) {
+        if (!cancelled) {
+          setProfile(null);
+          setLoading(false);
+        }
+        return;
+      }
+
+      if (!cancelled) {
+        setLoading(true);
+      }
+
       const userRef = doc(
         db,
         "users",

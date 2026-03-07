@@ -15,11 +15,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { UserProfile } from "@/hooks/useUserProfile";
-
-type PaymentType = "Zelle" | "Venmo" | "Cash";
-type LocationPreference = "Anteatery" | "Brandywine" | "Either";
-type UserRole = "buyer" | "seller";
+import {
+  PaymentType,
+  LocationPreference,
+  UserRole,
+  UserProfile,
+} from "@/types";
 
 interface SetupFormProps {
   role: UserRole;
@@ -53,22 +54,19 @@ export default function SetupForm({
 
   // Seller-specific fields
   const [locationPreference, setLocationPreference] =
-    useState<LocationPreference>(
-      (profile?.sellerLocationPreference as LocationPreference) ?? "Either",
-    );
+    useState<LocationPreference>(profile?.sellerLocationPreference ?? "Either");
   const [sellerPriceInput, setSellerPriceInput] = useState<string>(
     profile?.sellerPricePreference?.toString() ?? "",
   );
   const [sellerPaymentInput, setSellerPaymentInput] = useState<PaymentType>(
-    (profile?.sellerPaymentType as PaymentType) ?? "zelle",
+    profile?.sellerPaymentType ?? "Zelle",
   );
 
   // Computed values
   const name = nameInput ?? profile?.name ?? "";
   const buyerPrice =
     priceInput ?? profile?.buyerPricePreference?.toString() ?? "0";
-  const buyerPayment =
-    paymentInput ?? (profile?.buyerPaymentType as PaymentType) ?? "Zelle";
+  const buyerPayment = paymentInput ?? profile?.buyerPaymentType ?? "Zelle";
 
   const handleSave = async () => {
     const trimmedName = name.trim();
@@ -114,7 +112,11 @@ export default function SetupForm({
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen gap-6 p-4 pt-24">
-      <NavigationBar userRole={role} showSettings={false} showDashboard={true} />
+      <NavigationBar
+        userRole={role}
+        showSettings={false}
+        showDashboard={true}
+      />
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-2">
           {isReturningUser ? `${roleLabel} Settings` : `${roleLabel} Setup`}
