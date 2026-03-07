@@ -48,6 +48,7 @@ export default function SetupForm({
 
   // Buyer-specific fields
   const [priceInput, setPriceInput] = useState<string | undefined>(undefined);
+  const [priceError, setPriceError] = useState("");
   const [paymentInput, setPaymentInput] = useState<PaymentType | undefined>(
     undefined,
   );
@@ -68,6 +69,21 @@ export default function SetupForm({
     priceInput ?? profile?.buyerPricePreference?.toString() ?? "0";
   const buyerPayment = paymentInput ?? profile?.buyerPaymentType ?? "Zelle";
 
+  const updatePriceError = (price: string): boolean => {
+    if (!price.trim()) {
+      setPriceError("Price is required!");
+      return true;
+    }
+
+    if (Number(price) < 0) {
+      setPriceError("Price can't be negative!");
+      return true;
+    }
+
+    setPriceError("");
+    return false;
+  };
+
   const handleSave = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
@@ -76,7 +92,7 @@ export default function SetupForm({
     }
 
     if (role === "buyer") {
-      if (!buyerPrice || Number(buyerPrice) < 0) return;
+      if (updatePriceError(buyerPrice)) return;
 
       await updateDoc(doc(db, "users", userId), {
         name: trimmedName,
@@ -87,14 +103,11 @@ export default function SetupForm({
 
       router.push("/buyer-dashboard");
     } else {
-      if (
-        !locationPreference ||
-        !sellerPriceInput ||
-        Number(sellerPriceInput) < 0 ||
-        !sellerPaymentInput
-      ) {
+      if (!locationPreference || !sellerPaymentInput) {
         return;
       }
+
+      if (updatePriceError(sellerPriceInput)) return;
 
       await updateDoc(doc(db, "users", userId), {
         name: trimmedName,
@@ -184,8 +197,10 @@ export default function SetupForm({
                   ? setPriceInput(e.target.value)
                   : setSellerPriceInput(e.target.value)
               }
+              onInput={() => setPriceError("")}
               required
             />
+            {priceError && <p className="text-sm text-red-500">{priceError}</p>}
           </div>
 
           <div className="space-y-2">
