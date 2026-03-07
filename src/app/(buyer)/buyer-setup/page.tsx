@@ -5,16 +5,16 @@ import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import SetupForm from "@/components/SetupForm/SetupForm";
 
-export default function SellerSetup() {
+export default function BuyerSetup() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
 
   if (!user) return null;
 
   return (
-    <ProtectedRoute role="seller" setupAccess="any">
+    <ProtectedRoute role="buyer" setupAccess="any">
       <SetupForm
-        role="seller"
+        role="buyer"
         userId={user.uid}
         userEmail={user.email}
         profile={profile}
