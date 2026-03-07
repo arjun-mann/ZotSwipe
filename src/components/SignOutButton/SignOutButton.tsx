@@ -11,7 +11,7 @@ export default function SignOutButton() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      router.push("/");
+      window.location.href = "/";
     } catch {
       console.error("Error signing out!");
     }

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
 import LoadingPage from "@/components/LoadingPage/LoadingPage";
-import SignOutButton from "@/components/SignOutButton/SignOutButton";
+import NavigationBar from "@/components/NavigationBar/NavigationBar";
 import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
@@ -30,17 +30,8 @@ export default function LandingPage() {
 
   return (
     <ProtectedRoute>
+      <NavigationBar showSettings={false} showLanding={false} />
       <main className="min-h-screen bg-background relative flex flex-col">
-        <div className="absolute top-6 right-6 z-10 flex gap-3">
-          <SignOutButton />
-        </div>
-
-        <div className="pt-12 pb-8">
-          <h1 className="text-6xl font-bold text-foreground text-center">
-            ZotSwipe
-          </h1>
-        </div>
-
         <div className="flex-1 flex items-center justify-center px-8 pb-16">
           <div className="flex gap-8 flex-col sm:flex-row w-full max-w-7xl">
             <Button

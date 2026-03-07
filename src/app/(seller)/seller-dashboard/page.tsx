@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import LoadingPage from "@/components/LoadingPage/LoadingPage";
-import SignOutButton from "@/components/SignOutButton/SignOutButton";
+import NavigationBar from "@/components/NavigationBar/NavigationBar";
 import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -90,8 +89,9 @@ export default function SellerDashboard() {
 
   return (
     <ProtectedRoute role="seller" setupAccess="requires-complete">
-      <main className="min-h-screen bg-background px-6 py-10">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+      <NavigationBar userRole="seller" />
+      <main className="min-h-screen bg-background relative px-6 py-10">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 pt-20">
           <div className="flex flex-col gap-2">
             <h1 className="text-4xl font-bold">Seller Dashboard</h1>
             <p className="text-lg text-muted-foreground">
@@ -134,16 +134,6 @@ export default function SellerDashboard() {
               ))}
             </div>
           </section>
-
-          <div className="flex justify-end gap-3">
-            <Link href="/seller-setup">
-              <Button variant="outline">Seller settings</Button>
-            </Link>
-            <Link href="/">
-              <Button variant="outline">Back to landing page</Button>
-            </Link>
-            <SignOutButton />
-          </div>
         </div>
       </main>
     </ProtectedRoute>

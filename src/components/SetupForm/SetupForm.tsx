@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, updateDoc } from "firebase/firestore";
-import Link from "next/link";
 
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import NavigationBar from "@/components/NavigationBar/NavigationBar";
 import {
   Card,
   CardContent,
@@ -15,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import SignOutButton from "@/components/SignOutButton/SignOutButton";
 import { UserProfile } from "@/hooks/useUserProfile";
 
 type PaymentType = "Zelle" | "Venmo" | "Cash";
@@ -112,11 +111,10 @@ export default function SetupForm({
   };
 
   const roleLabel = role === "buyer" ? "Buyer" : "Seller";
-  const dashboardLink =
-    role === "buyer" ? "/buyer-dashboard" : "/seller-dashboard";
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-6 p-4">
+    <div className="relative flex flex-col items-center justify-center min-h-screen gap-6 p-4 pt-24">
+      <NavigationBar userRole={role} showSettings={false} showDashboard={true} />
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-2">
           {isReturningUser ? `${roleLabel} Settings` : `${roleLabel} Setup`}
@@ -212,22 +210,6 @@ export default function SetupForm({
           </Button>
         </CardContent>
       </Card>
-
-      <div className="flex w-full max-w-md flex-col gap-3">
-        {isReturningUser && (
-          <Link href={dashboardLink} className="w-full">
-            <Button variant="outline" className="w-full">
-              Back to dashboard
-            </Button>
-          </Link>
-        )}
-        <Link href="/" className="w-full">
-          <Button variant="outline" className="w-full">
-            Back to landing page
-          </Button>
-        </Link>
-        <SignOutButton />
-      </div>
     </div>
   );
 }

@@ -23,7 +23,7 @@ export function useAuthRedirect(
     if (redirectMode === "signin") {
       if (!user) return;
 
-      router.push("/");
+      router.push("/landing-page");
 
       return;
     }

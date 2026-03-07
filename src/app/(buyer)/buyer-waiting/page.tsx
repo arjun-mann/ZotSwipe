@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import SignOutButton from "@/components/SignOutButton/SignOutButton";
+import NavigationBar from "@/components/NavigationBar/NavigationBar";
 import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 import { db } from "@/lib/firebase";
 import {
@@ -86,29 +86,12 @@ export default function WaitingPage() {
 
   return (
     <ProtectedRoute role="buyer" setupAccess="requires-complete">
+      <NavigationBar userRole="buyer" showSettings={false} />
       <main className="min-h-screen bg-background relative flex flex-col">
-        <div className="pt-8 pb-4">
+        <div className="pt-24 pb-4">
           <h2 className="text-3xl font-semibold text-foreground text-center capitalize">
             {location}
           </h2>
-        </div>
-
-        {!matchFound && (
-          <div className="absolute top-6 left-6 z-10">
-            <Link href="/">
-              <Button
-                variant="destructive"
-                size="lg"
-                className="hover:ring-4 hover:ring-destructive/30"
-              >
-                Cancel Request
-              </Button>
-            </Link>
-          </div>
-        )}
-
-        <div className="absolute top-6 right-6 z-10">
-          <SignOutButton />
         </div>
 
         <div className="flex-1 flex items-center justify-center">
