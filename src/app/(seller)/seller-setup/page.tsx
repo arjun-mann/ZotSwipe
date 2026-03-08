@@ -67,9 +67,7 @@ export default function SellerSetup() {
     return <LoadingPage />;
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-6 p-4">

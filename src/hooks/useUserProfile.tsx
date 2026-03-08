@@ -4,12 +4,7 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, DocumentReference } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/components/AuthProvider/AuthProvider";
-
-interface UserProfile {
-  name: string | null;
-  email: string | null;
-  createdAt: Date;
-}
+import { UserProfile } from "@/types";
 
 export function useUserProfile() {
   const { user } = useAuth();
@@ -17,9 +12,21 @@ export function useUserProfile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    let cancelled = false;
 
     const fetchProfile = async () => {
+      if (!user) {
+        if (!cancelled) {
+          setProfile(null);
+          setLoading(false);
+        }
+        return;
+      }
+
+      if (!cancelled) {
+        setLoading(true);
+      }
+
       const userRef = doc(
         db,
         "users",
@@ -27,11 +34,17 @@ export function useUserProfile() {
       ) as DocumentReference<UserProfile>;
       const snap = await getDoc(userRef);
 
+      if (cancelled) return;
+
       setProfile(snap.data() ?? null);
       setLoading(false);
     };
 
     fetchProfile();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   return { profile, loading };
