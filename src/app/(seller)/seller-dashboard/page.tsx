@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from "@/components/AuthProvider/AuthProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { db } from "@/lib/firebase";
-import { getTimeAgo } from "@/lib/helpers";
+import { getBuyerRankScore, getTimeAgo } from "@/lib/helpers";
 import {
   collection,
   query,
@@ -25,8 +25,12 @@ import {
 
 interface Buyer {
   id: string;
+  name: string;
   location: "Anteatery" | "Brandywine";
   createdAt: Timestamp | null;
+  averageTravelTime: number;
+  swipesUsed: number;
+  rankScore: number;
 }
 
 export default function SellerDashboard() {
@@ -44,11 +48,37 @@ export default function SellerDashboard() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const updatedBuyers: Buyer[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        location: d.data().location,
-        createdAt: d.data().createdAt ?? null,
-      }));
+      const updatedBuyers: Buyer[] = snapshot.docs
+        .map((d) => {
+          const data = d.data();
+          const averageTravelTime = Number(data.average_travel_time ?? 0);
+          const swipesUsed = Number(data.swipes_used ?? 0);
+          const safeAverageTravelTime = Number.isFinite(averageTravelTime)
+            ? averageTravelTime
+            : 0;
+          const safeSwipesUsed = Number.isFinite(swipesUsed) ? swipesUsed : 0;
+
+          return {
+            id: d.id,
+            name:
+              typeof data.buyerName === "string" && data.buyerName.trim()
+                ? data.buyerName.trim()
+                : "Guest User",
+            location: data.location,
+            createdAt: data.createdAt ?? null,
+            averageTravelTime: safeAverageTravelTime,
+            swipesUsed: safeSwipesUsed,
+            rankScore: getBuyerRankScore(safeAverageTravelTime, safeSwipesUsed),
+          };
+        })
+        .sort((a, b) => {
+          const rankDelta = b.rankScore - a.rankScore;
+          if (rankDelta !== 0) return rankDelta;
+
+          const aCreatedAt = a.createdAt?.toMillis() ?? 0;
+          const bCreatedAt = b.createdAt?.toMillis() ?? 0;
+          return aCreatedAt - bCreatedAt;
+        });
       setBuyers(updatedBuyers);
     });
 
@@ -129,7 +159,7 @@ export default function SellerDashboard() {
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-muted" />
                     <div>
-                      <div className="text-lg font-semibold">Guest Buyer</div>
+                      <div className="text-lg font-semibold">{buyer.name}</div>
                       <div className="text-sm text-muted-foreground">
                         Location: {buyer.location}
                       </div>

@@ -12,6 +12,7 @@ import {
   addDoc,
   serverTimestamp,
   doc,
+  getDoc,
   deleteDoc,
   onSnapshot,
   runTransaction,
@@ -52,11 +53,25 @@ export default function WaitingPage() {
       if (requestDocId.current) return;
 
       try {
+        const userProfileSnap = await getDoc(doc(db, "users", userId));
+        const userProfile = userProfileSnap.data() ?? {};
+        const buyerName =
+          typeof userProfile.name === "string" && userProfile.name.trim()
+            ? userProfile.name.trim()
+            : "Guest User";
+        const averageTravelTime = Number(userProfile.average_travel_time ?? 0);
+        const swipesUsed = Number(userProfile.swipes_used ?? 0);
+
         const docRef = await addDoc(collection(db, "buyerRequests"), {
           location,
           status: "waiting",
           createdAt: serverTimestamp(),
           buyerId: userId,
+          buyerName,
+          average_travel_time: Number.isFinite(averageTravelTime)
+            ? averageTravelTime
+            : 0,
+          swipes_used: Number.isFinite(swipesUsed) ? swipesUsed : 0,
         });
 
         if (cancelled) {
