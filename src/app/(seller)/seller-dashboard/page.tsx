@@ -20,6 +20,7 @@ import {
   doc,
   updateDoc,
   Timestamp,
+  serverTimestamp,
 } from "firebase/firestore";
 
 interface Buyer {
@@ -33,6 +34,7 @@ export default function SellerDashboard() {
   const { profile, loading: profileLoading } = useUserProfile();
   const router = useRouter();
   const [buyers, setBuyers] = useState<Buyer[]>([]);
+  const [activeBuyerId, setActiveBuyerId] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query(
@@ -53,12 +55,34 @@ export default function SellerDashboard() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!activeBuyerId) return;
+
+    const unsubscribe = onSnapshot(doc(db, "buyerRequests", activeBuyerId), (snap) => {
+      if (!snap.exists()) {
+        setActiveBuyerId(null);
+        return;
+      }
+
+      const data = snap.data();
+      if (data?.status === "arrived") {
+        router.push("/seller-thanks");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [activeBuyerId, router]);
+
   const chooseBuyer = async (buyerId: string) => {
+    if (!user || activeBuyerId) return;
+
     try {
       await updateDoc(doc(db, "buyerRequests", buyerId), {
         status: "matched",
+        matchedBy: user.uid,
+        matchedAt: serverTimestamp(),
       });
-      router.push("/buyer-otw");
+      setActiveBuyerId(buyerId);
     } catch (err) {
       console.error("Failed to match buyer:", err);
     }
@@ -82,6 +106,11 @@ export default function SellerDashboard() {
             <p className="text-lg text-muted-foreground">
               Welcome back, {profile.name}. Select a buyer to continue.
             </p>
+            {activeBuyerId && (
+              <p className="text-sm text-muted-foreground">
+                Waiting for buyer to press &quot;At location&quot;...
+              </p>
+            )}
           </div>
 
           <section className="flex flex-col gap-4">
@@ -111,9 +140,10 @@ export default function SellerDashboard() {
                   </div>
                   <Button
                     className="sm:self-center"
+                    disabled={Boolean(activeBuyerId)}
                     onClick={() => chooseBuyer(buyer.id)}
                   >
-                    Choose buyer
+                    {activeBuyerId === buyer.id ? "Selected" : "Choose buyer"}
                   </Button>
                 </Card>
               ))}

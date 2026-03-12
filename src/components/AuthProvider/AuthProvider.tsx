@@ -34,6 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             sellerSetupComplete: false,
             buyerPricePreference: null,
             buyerPaymentType: null,
+            average_travel_time: 0,
+            swipes_used: 0,
           });
         }
       }

@@ -15,4 +15,6 @@ export interface UserProfile {
   sellerLocationPreference?: LocationPreference | null;
   sellerPricePreference?: number | null;
   sellerPaymentType?: PaymentType | null;
+  average_travel_time?: number;
+  swipes_used?: number;
 }
