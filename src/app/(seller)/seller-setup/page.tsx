@@ -23,14 +23,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useSellerRedirect } from "@/hooks/useSellerRedirect";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 type LocationPreference = "Anteatery" | "Brandywine" | "Either";
 type PaymentType = "Zelle" | "Venmo" | "Cash";
 
 export default function SellerSetup() {
   const router = useRouter();
-  const { user, authLoading, profileLoading } = useSellerRedirect("setup");
+  const { user, authLoading, profileLoading } = useAuthRedirect(
+    "seller",
+    "setup",
+  );
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState("");
   const [locationPreference, setLocationPreference] =
