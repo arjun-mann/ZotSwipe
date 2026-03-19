@@ -10,7 +10,8 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from "@/components/AuthProvider/AuthProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { db } from "@/lib/firebase";
-import { getTimeAgo } from "@/lib/helpers";
+import { getBuyerRankScore, getTimeAgo } from "@/lib/helpers";
+import { BuyerRequestPaymentType, PaymentType } from "@/types";
 import {
   collection,
   query,
@@ -20,19 +21,91 @@ import {
   doc,
   updateDoc,
   Timestamp,
+  serverTimestamp,
 } from "firebase/firestore";
 
 interface Buyer {
   id: string;
+  name: string;
   location: "Anteatery" | "Brandywine";
   createdAt: Timestamp | null;
+  paymentType: BuyerRequestPaymentType;
+  maxPrice: number;
+  averageTravelTime: number;
+  swipesUsed: number;
+  rankScore: number;
 }
 
 export default function SellerDashboard() {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
   const router = useRouter();
-  const [buyers, setBuyers] = useState<Buyer[]>([]);
+  const [allWaitingBuyers, setAllWaitingBuyers] = useState<Buyer[]>([]);
+
+  const sellerPaymentTypes: PaymentType[] = (() => {
+    if (Array.isArray(profile?.sellerPaymentTypes)) {
+      const valid = profile.sellerPaymentTypes.filter(
+        (value): value is PaymentType =>
+          value === "Zelle" || value === "Venmo" || value === "Cash",
+      );
+      if (valid.length > 0) return valid;
+    }
+
+    if (
+      profile?.sellerPaymentType === "Zelle" ||
+      profile?.sellerPaymentType === "Venmo" ||
+      profile?.sellerPaymentType === "Cash"
+    ) {
+      return [profile.sellerPaymentType];
+    }
+
+    if (
+      profile?.paymentType === "Zelle" ||
+      profile?.paymentType === "Venmo" ||
+      profile?.paymentType === "Cash"
+    ) {
+      return [profile.paymentType];
+    }
+
+    return [];
+  })();
+
+  const sellerPricePreference = (() => {
+    const parsedPrice = Number(
+      profile?.sellerPricePreference ?? profile?.pricePreference,
+    );
+    return Number.isFinite(parsedPrice) ? parsedPrice : Number.POSITIVE_INFINITY;
+  })();
+
+  const sellerLocationPreference = (() => {
+    const rawPreference =
+      profile?.sellerLocationPreference ?? profile?.locationPreference;
+    if (rawPreference === "Anteatery" || rawPreference === "Brandywine") {
+      return rawPreference;
+    }
+    return "Either";
+  })();
+
+  const buyers = allWaitingBuyers
+    .filter((buyer) => {
+      const priceCompatible = buyer.maxPrice >= sellerPricePreference;
+      const paymentCompatible =
+        buyer.paymentType === "Any" ||
+        sellerPaymentTypes.includes(buyer.paymentType as PaymentType);
+      const locationCompatible =
+        sellerLocationPreference === "Either" ||
+        buyer.location === sellerLocationPreference;
+
+      return priceCompatible && paymentCompatible && locationCompatible;
+    })
+    .sort((a, b) => {
+      const rankDelta = b.rankScore - a.rankScore;
+      if (rankDelta !== 0) return rankDelta;
+
+      const aCreatedAt = a.createdAt?.toMillis() ?? 0;
+      const bCreatedAt = b.createdAt?.toMillis() ?? 0;
+      return aCreatedAt - bCreatedAt;
+    });
 
   useEffect(() => {
     const q = query(
@@ -42,23 +115,56 @@ export default function SellerDashboard() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const updatedBuyers: Buyer[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        location: d.data().location,
-        createdAt: d.data().createdAt ?? null,
-      }));
-      setBuyers(updatedBuyers);
+      const updatedBuyers: Buyer[] = snapshot.docs.map((d) => {
+        const data = d.data();
+
+        const paymentType: BuyerRequestPaymentType =
+          data.paymentType === "Zelle" ||
+          data.paymentType === "Venmo" ||
+          data.paymentType === "Cash" ||
+          data.paymentType === "Any"
+            ? data.paymentType
+            : "Any";
+
+        const maxPrice = Number(data.maxPrice);
+        const averageTravelTime = Number(data.average_travel_time ?? 0);
+        const swipesUsed = Number(data.swipes_used ?? 0);
+        const safeAverageTravelTime = Number.isFinite(averageTravelTime)
+          ? averageTravelTime
+          : 0;
+        const safeSwipesUsed = Number.isFinite(swipesUsed) ? swipesUsed : 0;
+
+        return {
+          id: d.id,
+          name:
+            typeof data.buyerName === "string" && data.buyerName.trim()
+              ? data.buyerName.trim()
+              : "Guest Buyer",
+          location: data.location,
+          createdAt: data.createdAt ?? null,
+          paymentType,
+          maxPrice: Number.isFinite(maxPrice) ? maxPrice : 0,
+          averageTravelTime: safeAverageTravelTime,
+          swipesUsed: safeSwipesUsed,
+          rankScore: getBuyerRankScore(safeAverageTravelTime, safeSwipesUsed),
+        };
+      });
+      setAllWaitingBuyers(updatedBuyers);
     });
 
     return () => unsubscribe();
   }, []);
 
   const chooseBuyer = async (buyerId: string) => {
+    if (!user) return;
+
     try {
       await updateDoc(doc(db, "buyerRequests", buyerId), {
         status: "matched",
+        matchedBy: user.uid,
+        matchedAt: serverTimestamp(),
       });
-      router.push("/buyer-otw");
+      router.push(`/buyer-otw?requestId=${buyerId}`);
     } catch (err) {
       console.error("Failed to match buyer:", err);
     }
@@ -100,9 +206,15 @@ export default function SellerDashboard() {
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-muted" />
                     <div>
-                      <div className="text-lg font-semibold">Guest Buyer</div>
+                      <div className="text-lg font-semibold">{buyer.name}</div>
                       <div className="text-sm text-muted-foreground">
                         Location: {buyer.location}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Payment: {buyer.paymentType}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Max price: ${buyer.maxPrice}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         Requested: {getTimeAgo(buyer.createdAt)}

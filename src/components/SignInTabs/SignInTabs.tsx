@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  updateProfile,
 } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,17 +21,49 @@ import { Separator } from "@/components/ui/separator";
 type AuthType = "Sign In" | "Sign Up";
 
 function SignInCard({ authType }: { authType: AuthType }) {
+  const isSignUp = authType === "Sign Up";
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const handleEmailAuth = async () => {
     try {
-      const authFunc =
-        authType === "Sign In"
-          ? signInWithEmailAndPassword
-          : createUserWithEmailAndPassword;
-      await authFunc(auth, email, password);
+      if (isSignUp) {
+        const trimmedName = name.trim();
+        if (!trimmedName) {
+          setError("Please enter your name to sign up.");
+          return;
+        }
+
+        const credential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
+        await updateProfile(credential.user, { displayName: trimmedName });
+        await setDoc(
+          doc(db, "users", credential.user.uid),
+          {
+            email: credential.user.email,
+            name: trimmedName,
+            createdAt: new Date(),
+            buyerSetupComplete: false,
+            sellerSetupComplete: false,
+            buyerPricePreference: null,
+            buyerPaymentType: null,
+            sellerLocationPreference: null,
+            sellerPricePreference: null,
+            sellerPaymentType: null,
+            sellerPaymentTypes: null,
+            average_travel_time: 0,
+            swipes_used: 0,
+          },
+          { merge: true },
+        );
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
       setError("");
     } catch (error) {
       console.error(`Error trying to ${authType.toLowerCase()}:`, error);
@@ -60,6 +94,13 @@ function SignInCard({ authType }: { authType: AuthType }) {
       </CardHeader>
       <CardContent className="space-y-4">
         {error && <div className="text-red-500">{error}</div>}
+        {isSignUp && (
+          <Input
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        )}
         <Input
           placeholder="Email"
           value={email}

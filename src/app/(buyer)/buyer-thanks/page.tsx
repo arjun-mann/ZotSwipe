@@ -5,7 +5,7 @@ import NavigationBar from "@/components/NavigationBar/NavigationBar";
 
 export default function Page() {
   return (
-    <ProtectedRoute role="buyer" setupAccess="requires-complete">
+    <ProtectedRoute role="buyer" setupAccess="any">
       <NavigationBar userRole="buyer" showSettings={false} />
       <main className="min-h-screen bg-background relative flex flex-col justify-center">
         <div className="text-center space-y-6 pt-20">
