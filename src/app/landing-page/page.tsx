@@ -14,8 +14,7 @@ export default function LandingPage() {
   const { profile, loading } = useUserProfile();
 
   const goToBuyerFlow = () => {
-    const setupComplete = isSetupComplete("buyer", profile);
-    router.push(setupComplete ? "/buyer-dashboard" : "/buyer-setup");
+    router.push("/buyer-dashboard");
   };
 
   const goToSellerFlow = () => {

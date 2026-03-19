@@ -22,7 +22,7 @@ export default function NavigationBar({
   showSignOut = true,
   showSignIn = false
 }: NavigationBarProps) {
-  const settingsLink = userRole === "buyer" ? "/buyer-setup" : userRole === "seller" ? "/seller-setup" : null;
+  const settingsLink = userRole === "seller" ? "/seller-setup" : null;
   const dashboardLink = userRole === "buyer" ? "/buyer-dashboard" : userRole === "seller" ? "/seller-dashboard" : null;
 
   return (

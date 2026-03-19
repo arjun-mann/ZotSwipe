@@ -114,13 +114,14 @@ export default function SetupForm({
 
   const handleSave = async () => {
     setSaveError("");
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-      setNameError("Name is required!");
-      return;
-    }
 
     if (role === "buyer") {
+      const trimmedName = name.trim();
+      if (!trimmedName) {
+        setNameError("Name is required!");
+        return;
+      }
+
       if (updatePriceError(buyerPrice)) return;
 
       try {
@@ -147,9 +148,14 @@ export default function SetupForm({
         return;
       }
 
+      const sellerName =
+        profile?.name?.trim() ||
+        userEmail?.split("@")[0]?.trim() ||
+        "Seller";
+
       try {
         await updateDoc(doc(db, "users", userId), {
-          name: trimmedName,
+          name: sellerName,
           // Preferred canonical fields
           sellerLocationPreference: locationPreference,
           sellerPricePreference: Number(sellerPriceInput),
@@ -202,19 +208,21 @@ export default function SetupForm({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Name</label>
-            <Input
-              placeholder="Enter your name"
-              value={name}
-              onChange={(e) => {
-                setNameInput(e.target.value);
-                setNameError("");
-              }}
-              required
-            />
-            {nameError && <p className="text-sm text-red-500">{nameError}</p>}
-          </div>
+          {role === "buyer" && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Name</label>
+              <Input
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => {
+                  setNameInput(e.target.value);
+                  setNameError("");
+                }}
+                required
+              />
+              {nameError && <p className="text-sm text-red-500">{nameError}</p>}
+            </div>
+          )}
 
           {role === "seller" && (
             <div className="space-y-2">

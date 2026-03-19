@@ -32,7 +32,7 @@ export default function LandingPage() {
   };
 
   return (
-    <ProtectedRoute role="buyer" setupAccess="requires-complete">
+    <ProtectedRoute role="buyer" setupAccess="any">
       <NavigationBar userRole="buyer" />
       <main className="min-h-screen bg-background relative flex flex-col">
         <div className="flex-1 flex items-center justify-center px-8 py-16">

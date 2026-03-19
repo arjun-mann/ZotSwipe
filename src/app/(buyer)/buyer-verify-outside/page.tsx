@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 
 export default function Page() {
   return (
-    <ProtectedRoute role="buyer" setupAccess="requires-complete">
+    <ProtectedRoute role="buyer" setupAccess="any">
       <NavigationBar userRole="buyer" showSettings={false} />
       <main className="min-h-screen bg-background relative flex flex-col justify-center">
         <div className="flex flex-col text-center space-y-6 pt-20">

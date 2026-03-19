@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import NavigationBar from "@/components/NavigationBar/NavigationBar";
 import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 import { useAuth } from "@/components/AuthProvider/AuthProvider";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -14,19 +15,24 @@ import {
   doc,
   deleteDoc,
   onSnapshot,
+  runTransaction,
 } from "firebase/firestore";
 import { BuyerRequestPaymentType } from "@/types";
 
 export default function WaitingPage() {
   const { user } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
+  const router = useRouter();
   const [dots, setDots] = useState(1);
   const [matchFound, setMatchFound] = useState(false);
+  const [submittingArrival, setSubmittingArrival] = useState(false);
   const searchParams = useSearchParams();
   const location = searchParams.get("location") || "unknown";
   const paymentTypeParam = searchParams.get("paymentType");
   const maxPriceParam = searchParams.get("maxPrice");
   const requestDocId = useRef<string | null>(null);
+  const matchedAtMs = useRef<number | null>(null);
+  const requestCompleted = useRef(false);
   const userId = user?.uid;
 
   const requestPaymentType: BuyerRequestPaymentType =
@@ -92,7 +98,15 @@ export default function WaitingPage() {
           (snap) => {
             const data = snap.data();
             if (data?.status === "matched") {
+              if (matchedAtMs.current === null) {
+                matchedAtMs.current = Date.now();
+              }
               setMatchFound(true);
+            }
+
+            if (data?.status === "arrived") {
+              requestCompleted.current = true;
+              router.push("/buyer-thanks");
             }
           },
         );
@@ -106,12 +120,12 @@ export default function WaitingPage() {
     return () => {
       cancelled = true;
       unsubscribe?.();
-      if (requestDocId.current) {
+      if (requestDocId.current && !requestCompleted.current) {
         deleteDoc(doc(db, "buyerRequests", requestDocId.current)).catch(
           console.error,
         );
-        requestDocId.current = null;
       }
+      requestDocId.current = null;
     };
   }, [
     location,
@@ -121,11 +135,74 @@ export default function WaitingPage() {
     profile?.swipes_used,
     requestPaymentType,
     requestMaxPrice,
+    router,
     userId,
   ]);
 
+  const handleAtLocation = async () => {
+    const requestId = requestDocId.current;
+    const matchedAt = matchedAtMs.current;
+
+    if (!user || !requestId || matchedAt === null || submittingArrival) {
+      return;
+    }
+
+    setSubmittingArrival(true);
+    try {
+      const elapsedSeconds = Math.max(
+        1,
+        Math.round((Date.now() - matchedAt) / 1000),
+      );
+
+      const userRef = doc(db, "users", user.uid);
+      const requestRef = doc(db, "buyerRequests", requestId);
+
+      await runTransaction(db, async (tx) => {
+        const userSnap = await tx.get(userRef);
+        const userData = userSnap.data() ?? {};
+
+        const previousAverage = Number(userData.average_travel_time ?? 0);
+        const previousCount = Number(userData.swipes_used ?? 0);
+        const safePreviousAverage = Number.isFinite(previousAverage)
+          ? previousAverage
+          : 0;
+        const safePreviousCount = Number.isFinite(previousCount)
+          ? previousCount
+          : 0;
+
+        const nextCount = safePreviousCount + 1;
+        const nextAverage =
+          safePreviousCount === 0
+            ? elapsedSeconds
+            : (safePreviousAverage * safePreviousCount + elapsedSeconds) /
+              nextCount;
+
+        tx.set(
+          userRef,
+          {
+            average_travel_time: nextAverage,
+            swipes_used: nextCount,
+          },
+          { merge: true },
+        );
+
+        tx.update(requestRef, {
+          status: "arrived",
+          arrivedAt: serverTimestamp(),
+        });
+      });
+
+      requestCompleted.current = true;
+      router.push("/buyer-thanks");
+    } catch (err) {
+      console.error("Failed to mark buyer as arrived:", err);
+    } finally {
+      setSubmittingArrival(false);
+    }
+  };
+
   return (
-    <ProtectedRoute role="buyer" setupAccess="requires-complete">
+    <ProtectedRoute role="buyer" setupAccess="any">
       <NavigationBar userRole="buyer" showSettings={false} />
       <main className="min-h-screen bg-background relative flex flex-col">
         <div className="pt-24 pb-4">
@@ -155,6 +232,13 @@ export default function WaitingPage() {
                   Please head over to the entrance of{" "}
                   <span className="capitalize font-semibold">{location}</span>
                 </p>
+                <Button
+                  size="lg"
+                  onClick={handleAtLocation}
+                  disabled={submittingArrival}
+                >
+                  {submittingArrival ? "Updating..." : "At location"}
+                </Button>
               </>
             )}
           </div>

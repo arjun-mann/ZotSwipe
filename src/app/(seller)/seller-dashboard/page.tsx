@@ -21,6 +21,7 @@ import {
   doc,
   updateDoc,
   Timestamp,
+  serverTimestamp,
 } from "firebase/firestore";
 
 interface Buyer {
@@ -76,14 +77,26 @@ export default function SellerDashboard() {
     return Number.isFinite(parsedPrice) ? parsedPrice : Number.POSITIVE_INFINITY;
   })();
 
+  const sellerLocationPreference = (() => {
+    const rawPreference =
+      profile?.sellerLocationPreference ?? profile?.locationPreference;
+    if (rawPreference === "Anteatery" || rawPreference === "Brandywine") {
+      return rawPreference;
+    }
+    return "Either";
+  })();
+
   const buyers = allWaitingBuyers
     .filter((buyer) => {
       const priceCompatible = buyer.maxPrice >= sellerPricePreference;
       const paymentCompatible =
         buyer.paymentType === "Any" ||
         sellerPaymentTypes.includes(buyer.paymentType as PaymentType);
+      const locationCompatible =
+        sellerLocationPreference === "Either" ||
+        buyer.location === sellerLocationPreference;
 
-      return priceCompatible && paymentCompatible;
+      return priceCompatible && paymentCompatible && locationCompatible;
     })
     .sort((a, b) => {
       const rankDelta = b.rankScore - a.rankScore;
@@ -143,11 +156,15 @@ export default function SellerDashboard() {
   }, []);
 
   const chooseBuyer = async (buyerId: string) => {
+    if (!user) return;
+
     try {
       await updateDoc(doc(db, "buyerRequests", buyerId), {
         status: "matched",
+        matchedBy: user.uid,
+        matchedAt: serverTimestamp(),
       });
-      router.push("/buyer-otw");
+      router.push(`/buyer-otw?requestId=${buyerId}`);
     } catch (err) {
       console.error("Failed to match buyer:", err);
     }
