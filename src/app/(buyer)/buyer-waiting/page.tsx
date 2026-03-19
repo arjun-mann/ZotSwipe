@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import NavigationBar from "@/components/NavigationBar/NavigationBar";
 import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
+import { useAuth } from "@/components/AuthProvider/AuthProvider";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -13,13 +15,33 @@ import {
   deleteDoc,
   onSnapshot,
 } from "firebase/firestore";
+import { BuyerRequestPaymentType } from "@/types";
 
 export default function WaitingPage() {
+  const { user } = useAuth();
+  const { profile, loading: profileLoading } = useUserProfile();
   const [dots, setDots] = useState(1);
   const [matchFound, setMatchFound] = useState(false);
   const searchParams = useSearchParams();
   const location = searchParams.get("location") || "unknown";
+  const paymentTypeParam = searchParams.get("paymentType");
+  const maxPriceParam = searchParams.get("maxPrice");
   const requestDocId = useRef<string | null>(null);
+  const userId = user?.uid;
+
+  const requestPaymentType: BuyerRequestPaymentType =
+    paymentTypeParam === "Zelle" ||
+    paymentTypeParam === "Venmo" ||
+    paymentTypeParam === "Cash" ||
+    paymentTypeParam === "Any"
+      ? paymentTypeParam
+      : "Any";
+  const requestMaxPrice = (() => {
+    const rawValue = Number(maxPriceParam);
+    if (!Number.isFinite(rawValue)) return 0;
+    if (rawValue < 0) return 0;
+    return Math.floor(rawValue);
+  })();
 
   {
     /* Made interval 500 but feel free to adjust */
@@ -33,6 +55,8 @@ export default function WaitingPage() {
   }, []);
 
   useEffect(() => {
+    if (!userId || profileLoading) return;
+
     let cancelled = false;
     let unsubscribe: (() => void) | undefined;
 
@@ -45,6 +69,15 @@ export default function WaitingPage() {
           location,
           status: "waiting",
           createdAt: serverTimestamp(),
+          buyerId: userId,
+          buyerName:
+            typeof profile?.name === "string" && profile.name.trim()
+              ? profile.name.trim()
+              : "Guest User",
+          average_travel_time: Number(profile?.average_travel_time ?? 0),
+          swipes_used: Number(profile?.swipes_used ?? 0),
+          paymentType: requestPaymentType,
+          maxPrice: requestMaxPrice,
         });
 
         if (cancelled) {
@@ -80,7 +113,16 @@ export default function WaitingPage() {
         requestDocId.current = null;
       }
     };
-  }, [location]);
+  }, [
+    location,
+    profileLoading,
+    profile?.name,
+    profile?.average_travel_time,
+    profile?.swipes_used,
+    requestPaymentType,
+    requestMaxPrice,
+    userId,
+  ]);
 
   return (
     <ProtectedRoute role="buyer" setupAccess="requires-complete">

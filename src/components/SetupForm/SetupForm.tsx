@@ -36,6 +36,11 @@ export default function SetupForm({
   profile,
 }: SetupFormProps) {
   const router = useRouter();
+  const PAYMENT_OPTIONS: PaymentType[] = ["Zelle", "Venmo", "Cash"];
+
+  const isPaymentType = (value: unknown): value is PaymentType =>
+    typeof value === "string" &&
+    PAYMENT_OPTIONS.includes(value as PaymentType);
 
   const isReturningUser =
     role === "buyer"
@@ -44,6 +49,7 @@ export default function SetupForm({
 
   // Common fields
   const [nameError, setNameError] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [nameInput, setNameInput] = useState<string | undefined>(undefined);
 
   // Buyer-specific fields
@@ -55,12 +61,34 @@ export default function SetupForm({
 
   // Seller-specific fields
   const [locationPreference, setLocationPreference] =
-    useState<LocationPreference>(profile?.sellerLocationPreference ?? "Either");
+    useState<LocationPreference>(
+      profile?.sellerLocationPreference ?? profile?.locationPreference ?? "Either",
+    );
   const [sellerPriceInput, setSellerPriceInput] = useState<string>(
-    profile?.sellerPricePreference?.toString() ?? "",
+    (
+      profile?.sellerPricePreference ??
+      profile?.pricePreference ??
+      ""
+    ).toString(),
   );
-  const [sellerPaymentInput, setSellerPaymentInput] = useState<PaymentType>(
-    profile?.sellerPaymentType ?? "Zelle",
+  const [sellerPaymentError, setSellerPaymentError] = useState("");
+  const [sellerPaymentInputs, setSellerPaymentInputs] = useState<PaymentType[]>(
+    (() => {
+      if (Array.isArray(profile?.sellerPaymentTypes)) {
+        const valid = profile.sellerPaymentTypes.filter(isPaymentType);
+        if (valid.length > 0) return valid;
+      }
+
+      if (isPaymentType(profile?.sellerPaymentType)) {
+        return [profile.sellerPaymentType];
+      }
+
+      if (isPaymentType(profile?.paymentType)) {
+        return [profile.paymentType];
+      }
+
+      return ["Zelle"];
+    })(),
   );
 
   // Computed values
@@ -85,6 +113,7 @@ export default function SetupForm({
   };
 
   const handleSave = async () => {
+    setSaveError("");
     const trimmedName = name.trim();
     if (!trimmedName) {
       setNameError("Name is required!");
@@ -94,30 +123,50 @@ export default function SetupForm({
     if (role === "buyer") {
       if (updatePriceError(buyerPrice)) return;
 
-      await updateDoc(doc(db, "users", userId), {
-        name: trimmedName,
-        buyerPricePreference: Number(buyerPrice),
-        buyerPaymentType: buyerPayment,
-        buyerSetupComplete: true,
-      });
+      try {
+        await updateDoc(doc(db, "users", userId), {
+          name: trimmedName,
+          buyerPricePreference: Number(buyerPrice),
+          buyerPaymentType: buyerPayment,
+          buyerSetupComplete: true,
+        });
 
-      router.push("/buyer-dashboard");
+        router.push("/buyer-dashboard");
+      } catch (err) {
+        console.error("Failed to save buyer setup:", err);
+        setSaveError("We could not save your settings. Please try again.");
+      }
     } else {
-      if (!locationPreference || !sellerPaymentInput) {
+      if (!locationPreference) {
         return;
       }
 
       if (updatePriceError(sellerPriceInput)) return;
+      if (sellerPaymentInputs.length === 0) {
+        setSellerPaymentError("Select at least one payment type.");
+        return;
+      }
 
-      await updateDoc(doc(db, "users", userId), {
-        name: trimmedName,
-        sellerLocationPreference: locationPreference,
-        sellerPricePreference: Number(sellerPriceInput),
-        sellerPaymentType: sellerPaymentInput,
-        sellerSetupComplete: true,
-      });
+      try {
+        await updateDoc(doc(db, "users", userId), {
+          name: trimmedName,
+          // Preferred canonical fields
+          sellerLocationPreference: locationPreference,
+          sellerPricePreference: Number(sellerPriceInput),
+          sellerPaymentType: sellerPaymentInputs[0], // legacy compatibility
+          sellerPaymentTypes: sellerPaymentInputs,
+          sellerSetupComplete: true,
+          // Legacy keys retained for backward compatibility with older readers
+          locationPreference,
+          pricePreference: Number(sellerPriceInput),
+          paymentType: sellerPaymentInputs[0],
+        });
 
-      router.push("/seller-dashboard");
+        router.push("/seller-dashboard");
+      } catch (err) {
+        console.error("Failed to save seller setup:", err);
+        setSaveError("We could not save your settings. Please try again.");
+      }
     }
   };
 
@@ -203,28 +252,64 @@ export default function SetupForm({
             {priceError && <p className="text-sm text-red-500">{priceError}</p>}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Preferred Payment Type
-            </label>
-            <select
-              className="h-10 w-full rounded-md border border-input bg-background px-3"
-              value={role === "buyer" ? buyerPayment : sellerPaymentInput}
-              onChange={(e) =>
-                role === "buyer"
-                  ? setPaymentInput(e.target.value as PaymentType)
-                  : setSellerPaymentInput(e.target.value as PaymentType)
-              }
-            >
-              <option value="Zelle">Zelle</option>
-              <option value="Venmo">Venmo</option>
-              <option value="Cash">Cash</option>
-            </select>
-          </div>
+          {role === "buyer" ? (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Preferred Payment Type
+              </label>
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3"
+                value={buyerPayment}
+                onChange={(e) =>
+                  setPaymentInput(e.target.value as PaymentType)
+                }
+              >
+                <option value="Zelle">Zelle</option>
+                <option value="Venmo">Venmo</option>
+                <option value="Cash">Cash</option>
+              </select>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <label className="text-sm font-medium">
+                Accepted Payment Types
+              </label>
+              <div className="space-y-2 rounded-md border border-input p-3">
+                {PAYMENT_OPTIONS.map((paymentOption) => {
+                  const checked = sellerPaymentInputs.includes(paymentOption);
+                  return (
+                    <label
+                      key={paymentOption}
+                      className="flex items-center gap-3 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setSellerPaymentError("");
+                          setSellerPaymentInputs((prev) => {
+                            if (prev.includes(paymentOption)) {
+                              return prev.filter((value) => value !== paymentOption);
+                            }
+                            return [...prev, paymentOption];
+                          });
+                        }}
+                      />
+                      {paymentOption}
+                    </label>
+                  );
+                })}
+              </div>
+              {sellerPaymentError && (
+                <p className="text-sm text-red-500">{sellerPaymentError}</p>
+              )}
+            </div>
+          )}
 
           <Button onClick={handleSave} className="w-full">
             {isReturningUser ? "Save settings" : "Continue"}
           </Button>
+          {saveError && <p className="text-sm text-red-500">{saveError}</p>}
         </CardContent>
       </Card>
     </div>
